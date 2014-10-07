@@ -1,0 +1,38 @@
+{
+  "name": "cayley-perstore",
+  "version": "0.0.1",
+  "description": "a perstore implementation for cayley graph",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "dependencies": {
+    "cayley": "^0.2.0",
+    "q": "^1.0.1",
+    "uuid": "^1.4.2"
+  },
+  "devDependencies": {
+    "intern": "^2.1.0",
+    "jshint": "^2.5.6",
+    "sinon": "^1.10.3"
+  },
+  "scripts": {
+    "jshint": "jshint --exclude-path .gitignore --exclude tests .",
+    "test": "npm run jshint && intern-client config=tests/intern.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/neonstalwart/cayley-perstore.git"
+  },
+  "keywords": [
+    "perstore",
+    "cayley",
+    "persevere"
+  ],
+  "author": "Ben Hockey",
+  "license": "BSD",
+  "bugs": {
+    "url": "https://github.com/neonstalwart/cayley-perstore/issues"
+  },
+  "homepage": "https://github.com/neonstalwart/cayley-perstore"
+}
