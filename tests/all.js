@@ -1,4 +1,5 @@
 define(function (require) {
 	//require('./index');
-	require('./lib/schemaToQuads');
+	require('./lib/compileSchema');
+	require('./lib/toMQL');
 });
