@@ -72,7 +72,7 @@ define(function (require) {
 			}, ReferenceError, 'invalid schema');
 		},
 
-		'returns an object with toGraph and fromGraph properties': function () {
+		'returns an object with quads and mql properties': function () {
 			var schema = {
 					type: 'object',
 					properties: {
@@ -81,15 +81,13 @@ define(function (require) {
 						}
 					}
 				},
-				compiled;
+				compiled = compileSchema(schema);
 
-			compiled = compileSchema(schema);
-
-			assert.isFunction(compiled.toGraph, 'compileSchema has a toGraph property which is a function');
-			assert.isFunction(compiled.fromGraph, 'compileSchema has a fromGraph property which is a function');
+			assert.isFunction(compiled.quads, 'compileSchema has a quads property which is a function');
+			assert.isFunction(compiled.mql, 'compileSchema has a mql property which is a function');
 		},
 
-		toGraph: {
+		quads: {
 			'object test': function () {
 				var schema = {
 						type: 'object',
@@ -100,19 +98,16 @@ define(function (require) {
 						}
 					},
 					value = { id: 'foo' },
-					toGraph,
-					quads;
-
-				toGraph = compileSchema(schema).toGraph;
-				quads = toGraph(value.id, value);
+					compiled = compileSchema(schema),
+					quads = compiled.quads(value.id, value);
 
 				assert.lengthOf(quads, 1, 'an object with 1 property should produce 1 quad');
 			},
 
 			'complex structure': function () {
-				var toGraph = compileSchema(schema).toGraph,
+				var compiled = compileSchema(schema),
 					label = 'label',
-					quads = toGraph(value.id, value, label),
+					quads = compiled.quads(value.id, value, label),
 					cvt1 = testCvt(),
 					cvt2 = testCvt(),
 					cvt3 = testCvt(),
@@ -169,7 +164,7 @@ define(function (require) {
 			}
 		},
 
-		fromGraph: {
+		mql: {
 			'simple object': {
 				'no constraints': function () {
 					var schema = {
@@ -181,7 +176,7 @@ define(function (require) {
 							}
 						},
 						expected = [{ id: null }],
-						mql = compileSchema(schema).fromGraph();
+						mql = compileSchema(schema).mql();
 
 					assert.deepEqual(mql, expected, 'mql should match with no constraints');
 				},
@@ -197,7 +192,7 @@ define(function (require) {
 						},
 						expected = [{ id: 'foo' }],
 						q = new Query().eq('id', 'foo'),
-						mql = compileSchema(schema).fromGraph(q);
+						mql = compileSchema(schema).mql(q);
 
 					assert.deepEqual(mql, expected, 'mql should match with constraints');
 				}
@@ -256,7 +251,7 @@ define(function (require) {
 						}]
 					}],
 					q = new Query().eq('id', 'foo'),
-					mql = compileSchema(schema).fromGraph(q);
+					mql = compileSchema(schema).mql(q);
 
 				assert.deepEqual(mql, expected, 'mql should match complex schemas with constraints');
 			}
