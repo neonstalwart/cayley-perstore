@@ -197,7 +197,7 @@ define(function (require) {
 						},
 						arr: [{
 							str: null,
-							nested: []
+							nested: [ null ]
 						}]
 					}],
 					q = new Query().eq('id', 'foo').eq(['obj', 'key'], 'bar'),
