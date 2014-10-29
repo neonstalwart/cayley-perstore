@@ -16,6 +16,14 @@ define(function (require) {
 				num: {
 					type: 'number'
 				},
+				obj: {
+					type: 'object',
+					properties: {
+						key: {
+							type: 'string'
+						}
+					}
+				},
 				arr: {
 					type: 'array',
 					items: {
@@ -24,15 +32,7 @@ define(function (require) {
 							str: {
 								type: 'string'
 							},
-							obj: {
-								type: 'object',
-								properties: {
-									key: {
-										type: 'string'
-									}
-								}
-							},
-							arr: {
+							nested: {
 								type: 'array',
 								items: {
 									type: 'string'
@@ -53,10 +53,11 @@ define(function (require) {
 				id: '234098-98234-239320',
 				foo: 'bar',
 				num: 5,
+				obj: { key: 'value' },
 				arr: [
-					{ str: 'str', obj: { key: 'value' }, arr: [ 'foo', 'bar', 'baz' ] },
-					{ str: 'str', obj: { key: 'value' }, arr: [ 'foo', 'bar', 'baz' ] },
-					{ str: '333', obj: { key: 'vvv' }, arr: [ 'one', 'two', 'three' ] }
+					{ str: 'str', nested: [ 'foo', 'bar', 'baz' ] },
+					{ str: 'str', nested: [ 'foo', 'bar', 'baz' ] },
+					{ str: '333', nested: [ 'one', 'two', 'three' ] }
 				]
 			};
 		},
@@ -112,48 +113,36 @@ define(function (require) {
 					cvt2 = testCvt(),
 					cvt3 = testCvt(),
 					cvt4 = testCvt(),
-					cvt5 = testCvt(),
-					cvt6 = testCvt(),
 					expected = [
 						quad(value.id, 'id', value.id, label),
 						quad(value.id, 'foo', value.foo, label),
 						quad(value.id, 'num', '' + value.num, label),
+						quad(cvt1.set, 'obj', value.id, label),
+						quad(cvt1.test, 'key', 'value', label),
 						// instance.arr[0]
-						quad(cvt1.set, 'arr', value.id, label),
+						quad(cvt2.set, 'arr', value.id, label),
 						// instance.arr[0].str
-						quad(cvt1.test, 'str', 'str', label),
-						// instance.arr[0].obj
-						quad(cvt2.set, 'obj', cvt1.test, label),
-						// instance.arr[0].obj.key
-						quad(cvt2.test, 'key', 'value', label),
-						// instance.arr[0].arr[i]
-						quad(cvt1.test, 'arr', 'foo', label),
-						quad(cvt1.test, 'arr', 'bar', label),
-						quad(cvt1.test, 'arr', 'baz', label),
+						quad(cvt2.test, 'str', 'str', label),
+						// instance.arr[0].nested[i]
+						quad(cvt2.test, 'nested', 'foo', label),
+						quad(cvt2.test, 'nested', 'bar', label),
+						quad(cvt2.test, 'nested', 'baz', label),
 						// instance.arr[1]
 						quad(cvt3.set, 'arr', value.id, label),
 						// instance.arr[1].str
 						quad(cvt3.test, 'str', 'str', label),
-						// instance.arr[1].obj
-						quad(cvt4.set, 'obj', cvt3.test, label),
-						// instance.arr[1].obj.key
-						quad(cvt4.test, 'key', 'value', label),
-						// instance.arr[1].arr[i]
-						quad(cvt3.test, 'arr', 'foo', label),
-						quad(cvt3.test, 'arr', 'bar', label),
-						quad(cvt3.test, 'arr', 'baz', label),
+						// instance.arr[1].nested[i]
+						quad(cvt3.test, 'nested', 'foo', label),
+						quad(cvt3.test, 'nested', 'bar', label),
+						quad(cvt3.test, 'nested', 'baz', label),
 						// instance.arr[2]
-						quad(cvt5.set, 'arr', value.id, label),
+						quad(cvt4.set, 'arr', value.id, label),
 						// instance.arr[2].str
-						quad(cvt5.test, 'str', '333', label),
-						// instance.arr[2].obj
-						quad(cvt6.set, 'obj', cvt5.test, label),
-						// instance.arr[2].obj.key
-						quad(cvt6.test, 'key', 'vvv', label),
-						// instance.arr[2].arr[i]
-						quad(cvt5.test, 'arr', 'one', label),
-						quad(cvt5.test, 'arr', 'two', label),
-						quad(cvt5.test, 'arr', 'three', label),
+						quad(cvt4.test, 'str', '333', label),
+						// instance.arr[2].nested[i]
+						quad(cvt4.test, 'nested', 'one', label),
+						quad(cvt4.test, 'nested', 'two', label),
+						quad(cvt4.test, 'nested', 'three', label),
 					];
 
 				assert.lengthOf(quads, expected.length, 'the right number of quads shold be generated');
@@ -199,58 +188,19 @@ define(function (require) {
 			},
 
 			'complex object': function () {
-				var schema = {
-						type: 'object',
-						properties: {
-							id: {
-								type: 'string'
-							},
-							foo: {
-								type: 'string'
-							},
-							num: {
-								type: 'number'
-							},
-							obj: {
-								type: 'object',
-								properties: {
-									key: {
-										type: 'string'
-									}
-								}
-							},
-							arr: {
-								type: 'array',
-								items: {
-									type: 'object',
-									properties: {
-										str: {
-											type: 'string'
-										},
-										nested: {
-											type: 'array',
-											items: {
-												type: 'string'
-											}
-										}
-									}
-								}
-							}
-						}
-					},
-					expected = [{
+				var expected = [{
 						id: 'foo',
 						foo: null,
 						num: null,
 						obj: {
-							key: null
+							key: 'bar'
 						},
 						arr: [{
 							str: null,
 							nested: []
 						}]
 					}],
-					q = new Query().eq('id', 'foo'),
+					q = new Query().eq('id', 'foo').eq(['obj', 'key'], 'bar'),
 					mql = compileSchema(schema).mql(q);
 
 				assert.deepEqual(mql, expected, 'mql should match complex schemas with constraints');
