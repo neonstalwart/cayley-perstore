@@ -124,11 +124,11 @@ define(function (require) {
 						quad(value.id, 'foo', value.foo, label),
 						quad(value.id, 'num', '' + value.num, label),
 						// instance.arr[0]
-						quad(cvt1.set, 'arr.cvt', value.id, label),
+						quad(cvt1.set, 'arr', value.id, label),
 						// instance.arr[0].str
 						quad(cvt1.test, 'str', 'str', label),
 						// instance.arr[0].obj
-						quad(cvt2.set, 'obj.cvt', cvt1.test, label),
+						quad(cvt2.set, 'obj', cvt1.test, label),
 						// instance.arr[0].obj.key
 						quad(cvt2.test, 'key', 'value', label),
 						// instance.arr[0].arr[i]
@@ -136,11 +136,11 @@ define(function (require) {
 						quad(cvt1.test, 'arr', 'bar', label),
 						quad(cvt1.test, 'arr', 'baz', label),
 						// instance.arr[1]
-						quad(cvt3.set, 'arr.cvt', value.id, label),
+						quad(cvt3.set, 'arr', value.id, label),
 						// instance.arr[1].str
 						quad(cvt3.test, 'str', 'str', label),
 						// instance.arr[1].obj
-						quad(cvt4.set, 'obj.cvt', cvt3.test, label),
+						quad(cvt4.set, 'obj', cvt3.test, label),
 						// instance.arr[1].obj.key
 						quad(cvt4.test, 'key', 'value', label),
 						// instance.arr[1].arr[i]
@@ -148,11 +148,11 @@ define(function (require) {
 						quad(cvt3.test, 'arr', 'bar', label),
 						quad(cvt3.test, 'arr', 'baz', label),
 						// instance.arr[2]
-						quad(cvt5.set, 'arr.cvt', value.id, label),
+						quad(cvt5.set, 'arr', value.id, label),
 						// instance.arr[2].str
 						quad(cvt5.test, 'str', '333', label),
 						// instance.arr[2].obj
-						quad(cvt6.set, 'obj.cvt', cvt5.test, label),
+						quad(cvt6.set, 'obj', cvt5.test, label),
 						// instance.arr[2].obj.key
 						quad(cvt6.test, 'key', 'vvv', label),
 						// instance.arr[2].arr[i]
@@ -197,16 +197,13 @@ define(function (require) {
 						},
 						expected = [{ id: 'foo' }],
 						q = new Query().eq('id', 'foo'),
-						mql;
-
-					mql = compileSchema(schema).fromGraph(q);
+						mql = compileSchema(schema).fromGraph(q);
 
 					assert.deepEqual(mql, expected, 'mql should match with constraints');
 				}
 			},
 
 			'complex object': function () {
-				return this.skip();
 				var schema = {
 						type: 'object',
 						properties: {
@@ -219,6 +216,14 @@ define(function (require) {
 							num: {
 								type: 'number'
 							},
+							obj: {
+								type: 'object',
+								properties: {
+									key: {
+										type: 'string'
+									}
+								}
+							},
 							arr: {
 								type: 'array',
 								items: {
@@ -227,15 +232,7 @@ define(function (require) {
 										str: {
 											type: 'string'
 										},
-										obj: {
-											type: 'object',
-											properties: {
-												key: {
-													type: 'string'
-												}
-											}
-										},
-										arr: {
+										nested: {
 											type: 'array',
 											items: {
 												type: 'string'
@@ -245,7 +242,23 @@ define(function (require) {
 								}
 							}
 						}
-					};
+					},
+					expected = [{
+						id: 'foo',
+						foo: null,
+						num: null,
+						obj: {
+							key: null
+						},
+						arr: [{
+							str: null,
+							nested: []
+						}]
+					}],
+					q = new Query().eq('id', 'foo'),
+					mql = compileSchema(schema).fromGraph(q);
+
+				assert.deepEqual(mql, expected, 'mql should match complex schemas with constraints');
 			}
 		}
 	});
