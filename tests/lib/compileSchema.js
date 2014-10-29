@@ -117,10 +117,12 @@ define(function (require) {
 						quad(value.id, 'id', value.id, label),
 						quad(value.id, 'foo', value.foo, label),
 						quad(value.id, 'num', '' + value.num, label),
-						quad(cvt1.set, 'obj', value.id, label),
+						quad(value.id, 'obj', cvt1.set, label),
+						quad(cvt1.test, 'obj.cvt', value.id, label),
 						quad(cvt1.test, 'key', 'value', label),
 						// instance.arr[0]
-						quad(cvt2.set, 'arr', value.id, label),
+						quad(value.id, 'arr', cvt2.set, label),
+						quad(cvt2.test, 'arr.cvt', value.id, label),
 						// instance.arr[0].str
 						quad(cvt2.test, 'str', 'str', label),
 						// instance.arr[0].nested[i]
@@ -128,7 +130,8 @@ define(function (require) {
 						quad(cvt2.test, 'nested', 'bar', label),
 						quad(cvt2.test, 'nested', 'baz', label),
 						// instance.arr[1]
-						quad(cvt3.set, 'arr', value.id, label),
+						quad(value.id, 'arr', cvt3.set, label),
+						quad(cvt3.test, 'arr.cvt', value.id, label),
 						// instance.arr[1].str
 						quad(cvt3.test, 'str', 'str', label),
 						// instance.arr[1].nested[i]
@@ -136,7 +139,8 @@ define(function (require) {
 						quad(cvt3.test, 'nested', 'bar', label),
 						quad(cvt3.test, 'nested', 'baz', label),
 						// instance.arr[2]
-						quad(cvt4.set, 'arr', value.id, label),
+						quad(value.id, 'arr', cvt4.set, label),
+						quad(cvt4.test, 'arr.cvt', value.id, label),
 						// instance.arr[2].str
 						quad(cvt4.test, 'str', '333', label),
 						// instance.arr[2].nested[i]

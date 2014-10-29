@@ -22,6 +22,14 @@ define(function (require) {
 			assert.deepEqual(actual, expected, 'convert key/value query to MQL');
 		},
 
+		'parsed query': function () {
+			var query = 'eq(foo,bar)',
+				expected = { foo: 'bar' },
+				actual = toMQL(query);
+
+			assert.deepEqual(actual, expected, 'stringified queries are parsed');
+		},
+
 		'special values': {
 			'null values (match any)': function () {
 				var query = new Query().eq('foo', null),
