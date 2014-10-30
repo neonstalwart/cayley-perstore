@@ -21,6 +21,14 @@ define(function (require) {
 					properties: {
 						key: {
 							type: 'string'
+						},
+						inner: {
+							type: 'object',
+							properties: {
+								nested: {
+									type: 'boolean'
+								}
+							}
 						}
 					}
 				},
@@ -37,6 +45,9 @@ define(function (require) {
 								items: {
 									type: 'string'
 								}
+							},
+							even: {
+								type: 'boolean'
 							}
 						}
 					}
@@ -53,11 +64,11 @@ define(function (require) {
 				id: '234098-98234-239320',
 				foo: 'bar',
 				num: 5,
-				obj: { key: 'value' },
+				obj: { key: 'value', inner: { nested: true } },
 				arr: [
-					{ str: 'str', nested: [ 'foo', 'bar', 'baz' ] },
-					{ str: 'str', nested: [ 'foo', 'bar', 'baz' ] },
-					{ str: '333', nested: [ 'one', 'two', 'three' ] }
+					{ str: 'str', nested: [ 'foo', 'bar', 'baz' ], even: false },
+					{ str: 'str', nested: [ 'foo', 'bar', 'baz' ], even: true },
+					{ str: '333', nested: [ 'one', 'two', 'three' ], even: false }
 				]
 			};
 		},
@@ -113,6 +124,7 @@ define(function (require) {
 					cvt2 = testCvt(),
 					cvt3 = testCvt(),
 					cvt4 = testCvt(),
+					cvt5 = testCvt(),
 					expected = [
 						quad(value.id, 'id', value.id, label),
 						quad(value.id, 'foo', value.foo, label),
@@ -120,33 +132,42 @@ define(function (require) {
 						quad(value.id, 'obj', cvt1.set, label),
 						quad(cvt1.test, 'obj.cvt', value.id, label),
 						quad(cvt1.test, 'key', 'value', label),
+						quad(cvt1.test, 'inner', cvt2.set, label),
+						quad(cvt2.test, 'inner.cvt', cvt1.test, label),
+						quad(cvt2.test, 'nested', 'true', label),
 						// instance.arr[0]
-						quad(value.id, 'arr', cvt2.set, label),
-						quad(cvt2.test, 'arr.cvt', value.id, label),
-						// instance.arr[0].str
-						quad(cvt2.test, 'str', 'str', label),
-						// instance.arr[0].nested[i]
-						quad(cvt2.test, 'nested', 'foo', label),
-						quad(cvt2.test, 'nested', 'bar', label),
-						quad(cvt2.test, 'nested', 'baz', label),
-						// instance.arr[1]
 						quad(value.id, 'arr', cvt3.set, label),
 						quad(cvt3.test, 'arr.cvt', value.id, label),
-						// instance.arr[1].str
+						// instance.arr[0].str
 						quad(cvt3.test, 'str', 'str', label),
-						// instance.arr[1].nested[i]
+						// instance.arr[0].nested[i]
 						quad(cvt3.test, 'nested', 'foo', label),
 						quad(cvt3.test, 'nested', 'bar', label),
 						quad(cvt3.test, 'nested', 'baz', label),
-						// instance.arr[2]
+						// instance.arr[0].even
+						quad(cvt3.test, 'even', 'false', label),
+						// instance.arr[1]
 						quad(value.id, 'arr', cvt4.set, label),
 						quad(cvt4.test, 'arr.cvt', value.id, label),
+						// instance.arr[1].str
+						quad(cvt4.test, 'str', 'str', label),
+						// instance.arr[1].nested[i]
+						quad(cvt4.test, 'nested', 'foo', label),
+						quad(cvt4.test, 'nested', 'bar', label),
+						quad(cvt4.test, 'nested', 'baz', label),
+						// instance.arr[1].even
+						quad(cvt4.test, 'even', 'true', label),
+						// instance.arr[2]
+						quad(value.id, 'arr', cvt5.set, label),
+						quad(cvt5.test, 'arr.cvt', value.id, label),
 						// instance.arr[2].str
-						quad(cvt4.test, 'str', '333', label),
+						quad(cvt5.test, 'str', '333', label),
 						// instance.arr[2].nested[i]
-						quad(cvt4.test, 'nested', 'one', label),
-						quad(cvt4.test, 'nested', 'two', label),
-						quad(cvt4.test, 'nested', 'three', label),
+						quad(cvt5.test, 'nested', 'one', label),
+						quad(cvt5.test, 'nested', 'two', label),
+						quad(cvt5.test, 'nested', 'three', label),
+						// instance.arr[2].even
+						quad(cvt5.test, 'even', 'false', label)
 					];
 
 				assert.lengthOf(quads, expected.length, 'the right number of quads shold be generated');
@@ -197,17 +218,70 @@ define(function (require) {
 						foo: null,
 						num: null,
 						obj: {
-							key: 'bar'
+							key: 'bar',
+							inner: {
+								nested: null
+							}
 						},
 						arr: [{
 							str: null,
-							nested: [ null ]
+							nested: [ null ],
+							even: null
 						}]
 					}],
 					q = new Query().eq('id', 'foo').eq(['obj', 'key'], 'bar'),
 					mql = compileSchema(schema).mql(q);
 
 				assert.deepEqual(mql, expected, 'mql should match complex schemas with constraints');
+			}
+		},
+
+		coerce: {
+			'simple object': function () {
+				var schema = {
+						type: 'object',
+						properties: {
+							id: {
+								type: 'string'
+							},
+							num: {
+								type: 'number'
+							},
+							date: {
+								type: 'date'
+							},
+							int: {
+								type: 'integer'
+							},
+							bool: {
+								type: 'boolean'
+							}
+						}
+					},
+					id = '1234',
+					num = 5.4,
+					date = new Date(),
+					int = 3,
+					bool = true,
+					expected = {
+						id: id,
+						num: num,
+						date: date,
+						int: int,
+						bool: bool
+					},
+					fromGraph = deepToString(expected),
+					actual = compileSchema(schema).coerce(fromGraph);
+
+				assert.strictEqual(JSON.stringify(actual), JSON.stringify(expected), 'coerce should coerce values based on schema');
+			},
+
+			'complex object': function () {
+				var expected = value,
+					fromGraph = deepToString(expected),
+					actual = compileSchema(schema).coerce(fromGraph);
+
+				assert.strictEqual(JSON.stringify(actual), JSON.stringify(expected), 'coerce should coerce values based on schema');
 			}
 		}
 	});
@@ -241,5 +315,25 @@ define(function (require) {
 				return cvt === value;
 			}, 'cvt test assertion')
 		};
+	}
+
+	function deepToString(object) {
+		if (object != null) {
+			if (typeof object.toJSON === 'function') {
+				object = object.toJSON();
+			}
+
+			if (typeof object === 'object') {
+				if (Array.isArray(object)) {
+					return object.map(deepToString);
+				}
+				return Object.keys(object).reduce(function (value, key) {
+					value[ key ] = deepToString(object[ key ]);
+					return value;
+				}, {});
+			}
+		}
+
+		return '' + object;
 	}
 });

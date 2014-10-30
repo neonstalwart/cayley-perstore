@@ -54,10 +54,9 @@ Store.prototype = {
 					throw error;
 				}
 
-				var result = body && body.result,
-					item = result && result.length ? result[0] : undefined;
+				var result = body && body.result;
 
-				return item;
+				return result && result.length ? store._compiled.coerce(result[0]) : undefined;
 			});
 		});
 	},

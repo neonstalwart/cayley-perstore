@@ -2,6 +2,7 @@ define(function (require) {
 	var test = require('intern!object'),
 		assert = require('intern/chai!assert'),
 		Store = require('intern/dojo/node!../index'),
+		Server = require('intern/dojo/node!./util/Server'),
 		cayleyURL = 'http://localhost:64210',
 		Q = require('intern/dojo/node!q'),
 		schema = {
@@ -44,7 +45,8 @@ define(function (require) {
 			}
 		},
 		value,
-		store;
+		store,
+		server;
 
 	test({
 		name: 'cayley-perstore Store API',
@@ -59,7 +61,7 @@ define(function (require) {
 			value = {
 				id: '234098-98234-239320',
 				foo: 'bar',
-				num: '5',
+				num: 5,
 				obj: { key: 'value' },
 				arr: [
 					{ str: 'str', nested: [ 'foo', 'bar', 'baz' ] },
@@ -67,6 +69,14 @@ define(function (require) {
 					{ str: '333', nested: [ 'one', 'two', 'three' ] }
 				]
 			};
+
+			return new Server().then(function (process) {
+				server = process;
+			});
+		},
+
+		afterEach: function () {
+			return server.kill();
 		},
 
 		constructor: {
@@ -127,6 +137,33 @@ define(function (require) {
 				return store.get(id).then(function (obj) {
 					assert.isUndefined(obj, 'non-matching id should return undefined');
 				});
+			},
+
+			'returns value found at the requested key': function () {
+				var store = new Store({ url: cayleyURL }),
+					schema = {
+						type: 'object',
+						properties: {
+							id: { type: 'string' },
+							name: { type: 'string' }
+						}
+					},
+					key = 'foo',
+					value = {
+						id: key,
+						name: 'bar'
+					};
+
+				store.setSchema(schema);
+
+				return store.put(value)
+					.then(function (id) {
+						console.log(id);
+						return store.get(key);
+					})
+					.then(function (actual) {
+						assert.deepEqual(actual, value, 'store.get should retrieve values stored at key');
+					});
 			}
 		}
 	});
