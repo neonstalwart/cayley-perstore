@@ -1,12 +1,14 @@
 define(function (require) {
 	var test = require('intern!object'),
 		assert = require('intern/chai!assert'),
+		config = require('./intern'),
 		Store = require('intern/dojo/node!../index'),
 		Server = require('intern/dojo/node!./util/Server'),
 		uuid = require('intern/dojo/node!uuid'),
 		Q = require('intern/dojo/node!q'),
+		Query = require('intern/dojo/node!rql/query').Query,
 		Client = require('intern/dojo/node!../lib/Client'),
-		cayleyURL = 'http://localhost:64211',
+		cayleyURL = 'http://localhost:' + config.cayley.port,
 		client = new Client({ url: cayleyURL }),
 		schema = {
 			type: 'object',
@@ -28,11 +30,11 @@ define(function (require) {
 
 		beforeEach: function () {
 			value = {
-				id: '234098-98234-239320',
+				id: uuid.v4(),
 				name: 'name'
 			};
 
-			return new Server().then(function (cayley) {
+			return new Server(config.cayley).then(function (cayley) {
 				server = cayley;
 			});
 		},
@@ -262,56 +264,33 @@ define(function (require) {
 		},
 
 		query: {
-			'returns a promise for a forEachable stream': function () {
-				return this.skip('not implemented');
-				var key = data[0].id,
-					query = new Query().eq('id', key),
-					results = store.query(query);
+			'returns results based on query': function () {
+				var values = [ value ],
+					query = new Query().eq('name', value.name);
 
-				assert.isFunction(results.then, 'query results should be a promise');
-
-				return results.then(function (stream) {
-					assert.isFunction(stream.forEach, 'results should resolve to a forEachable');
-					return stream.forEach(function (item) {
-						assert.propertyVal(item, 'id', key, 'items should match query');
-					});
+				values.push({
+					id: uuid.v4(),
+					name: value.name
 				});
-			},
 
-			'limits results based on query': function () {
-				return this.skip('not implemented');
-				var query = new Query().gt('id', 0).limit(2);
-
-				return store.query(query).then(function (stream) {
-					var length = 0;
-					return stream.forEach(function (item) {
-						assert.ok(item.id > 0, 'items should match query');
-						length++;
-					})
-					.then(function () {
-						assert.strictEqual(length, 2, 'query limit should be applied');
-					});
+				values.push({
+					id: uuid.v4(),
+					name: uuid.v4()
 				});
-			},
 
-			'includes a forEach convenience method': function () {
-				return this.skip('not implemented');
-				var key = data[0].id,
-					query = new Query().eq('id', key),
-					results = store.query(query),
-					count = 0;
-
-				assert.isFunction(results.forEach, 'results should have a forEach convenience method');
-				return results.forEach(function (item) {
-					assert.propertyVal(item, 'id', key, 'items should match query');
-					count++;
-				})
+				return Q.all(values.map(function (val) {
+					return store.put(val);
+				}))
 				.then(function () {
-					assert.strictEqual(count, 1);
+					return store.query(query);
+				})
+				.then(function (results) {
+					assert.strictEqual(results.length, 2, 'query should filter results');
+					results.forEach(function (result, i) {
+						assert.deepEqual(result, values[ i ]);
+					});
 				});
 			}
-
-			// TODO: sort(?!)
 		}
 	});
 

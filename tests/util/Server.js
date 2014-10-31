@@ -3,13 +3,35 @@ var spawn = require('child_process').spawn,
 
 module.exports = Server;
 
-function Server() {
-	// TODO: change the dbpath
-	var dbPath = process.env.GOPATH + '/src/github.com/google/cayley/testdata.nq',
-		dfd = Q.defer(),
-		child = this.child = spawn('cayley', ['http', '--dbpath=' + dbPath, '--logtostderr', '--port=64211' ]);
+function Server(options) {
+	options = options || {};
+
+	var dfd = Q.defer(),
+		args = Object.keys(options).reduce(function (args, key) {
+			var value = options[ key ];
+
+			key = '--' + key;
+
+			// boleans just need a flag
+			if (value === true) {
+				args.push(key);
+			}
+			// ignore false values but allow values like empty strings
+			else if (value !== false) {
+				args.push(key + '=' + value);
+			}
+
+			return args;
+		}, [ 'http' ]),
+		child = this.child = spawn('cayley', args);
 
 	child.stdout.on('data', onData);
+
+	if (options.logtostderr) {
+		child.stderr.on('data', function (data) {
+			console.log(String(data));
+		});
+	}
 
 	dfd.promise.then(function () {
 		child.stdout.removeListener('data', onData);

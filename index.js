@@ -80,5 +80,21 @@ Store.prototype = {
 				return true;
 			});
 		});
+	},
+
+	query: function (query) {
+		var store = this,
+			mql = store._compiled.mql(query);
+
+		return this.client.query(mql)
+		.then(function (results) {
+			results = results || [];
+
+			return results.map(function (result) {
+				return store._compiled.coerce(result);
+			});
+
+			// TODO: use rql/js-array to do sorting (and limit?)
+		});
 	}
 };

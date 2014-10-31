@@ -17,7 +17,12 @@ define({
 	// Non-functional test suite(s) to run in each browser
 	suites: [ 'cayley-perstore/tests/all' ],
 
+	cayley: {
+		dbpath: '',
+		logtostderr: false,
+		port: 64211
+	},
+
 	// A regular expression matching URLs to files that should not be included in code coverage analysis
-	//excludeInstrumentation: /^(?:tests|node_modules)\//
-	excludeInstrumentation: /^./
+	excludeInstrumentation: /^(?:tests|node_modules)\//
 });
