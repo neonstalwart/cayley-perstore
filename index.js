@@ -23,6 +23,10 @@ Store.prototype = {
 	constructor: Store,
 
 	setSchema: function (schema) {
+		if (this._compiled) {
+			throw new Error('cayley-perstore: schema has already been set');
+		}
+
 		this._compiled = compileSchema(schema);
 	},
 
@@ -60,7 +64,9 @@ Store.prototype = {
 		});
 	},
 
-	delete: function (id, options) {
+	delete: function (id) {
+		var store = this;
+
 		// cayley needs to know all the quads in order to delete an entire object so we have to query for the whole
 		// object first, get the quads based on the object and then delete them.
 		return this.get(id)
@@ -70,6 +76,9 @@ Store.prototype = {
 			}
 
 			return store.client.delete(store._compiled.quads(id, object))
+			.then(function () {
+				return true;
+			});
 		});
 	}
 };
