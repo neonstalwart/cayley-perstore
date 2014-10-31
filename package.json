@@ -10,12 +10,12 @@
     "q": "^1.0.1",
     "q-io": "^1.11.5",
     "rql": "^0.3.3",
-    "uuid": "^1.4.2"
+    "uuid": "^2.0.1"
   },
   "devDependencies": {
-    "intern": "^2.1.0",
-    "jshint": "^2.5.6",
-    "sinon": "^1.10.3"
+    "intern": "^2.1.1",
+    "jshint": "^2.5.8",
+    "sinon": "^1.11.1"
   },
   "scripts": {
     "jshint": "jshint --exclude-path .gitignore --exclude tests .",
