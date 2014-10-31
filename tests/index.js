@@ -238,7 +238,6 @@ define(function (require) {
 
 		delete: {
 			'should remove an object from the db': function () {
-				return this.skip('not implemented');
 				var key = 'foo',
 					value = {
 						id: key,

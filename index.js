@@ -58,5 +58,18 @@ Store.prototype = {
 				return id;
 			});
 		});
+	},
+
+	delete: function (id, options) {
+		// cayley needs to know all the quads in order to delete an entire object so we have to query for the whole
+		// object first, get the quads based on the object and then delete them.
+		return this.get(id)
+		.then(function (object) {
+			if (!object) {
+				return object;
+			}
+
+			return store.client.delete(store._compiled.quads(id, object))
+		});
 	}
 };
