@@ -137,7 +137,7 @@ define(function (require) {
 							}
 						},
 						keys = [],
-						numValues = 200,
+						numValues = 20,
 						options = {
 							overwrite: false
 						};
