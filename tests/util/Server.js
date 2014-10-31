@@ -7,9 +7,7 @@ function Server() {
 	// TODO: change the dbpath
 	var dbPath = process.env.GOPATH + '/src/github.com/google/cayley/testdata.nq',
 		dfd = Q.defer(),
-		child;
-
-	child = this.child = spawn('cayley', ['http', '--dbpath=' + dbPath ]);
+		child = this.child = spawn('cayley', ['http', '--dbpath=' + dbPath, '--logtostderr' ]);
 
 	child.stdout.on('data', onData);
 

@@ -3,75 +3,37 @@ define(function (require) {
 		assert = require('intern/chai!assert'),
 		Store = require('intern/dojo/node!../index'),
 		Server = require('intern/dojo/node!./util/Server'),
-		cayleyURL = 'http://localhost:64210',
+		uuid = require('intern/dojo/node!uuid'),
 		Q = require('intern/dojo/node!q'),
+		Client = require('intern/dojo/node!../lib/Client'),
+		cayleyURL = 'http://localhost:64210',
+		client = new Client({ url: cayleyURL }),
 		schema = {
 			type: 'object',
 			properties: {
-				id: {
-					type: 'string'
-				},
-				foo: {
-					type: 'string'
-				},
-				num: {
-					type: 'number'
-				},
-				obj: {
-					type: 'object',
-					properties: {
-						key: {
-							type: 'string'
-						}
-					}
-				},
-				arr: {
-					type: 'array',
-					items: {
-						type: 'object',
-						properties: {
-							str: {
-								type: 'string'
-							},
-							nested: {
-								type: 'array',
-								items: {
-									type: 'string'
-								}
-							}
-						}
-					}
-				}
+				id: { type: 'string' },
+				name: { type: 'string' }
 			}
 		},
+		store = new Store({
+			client: client
+		}),
 		value,
-		store,
 		server;
+
+	store.setSchema(schema);
 
 	test({
 		name: 'cayley-perstore Store API',
 
 		beforeEach: function () {
-			store = new Store({
-				url: cayleyURL
-			});
-
-			store.setSchema(schema);
-
 			value = {
 				id: '234098-98234-239320',
-				foo: 'bar',
-				num: 5,
-				obj: { key: 'value' },
-				arr: [
-					{ str: 'str', nested: [ 'foo', 'bar', 'baz' ] },
-					{ str: 'str', nested: [ 'foo', 'bar', 'baz' ] },
-					{ str: '333', nested: [ 'one', 'two', 'three' ] }
-				]
+				name: 'name'
 			};
 
-			return new Server().then(function (process) {
-				server = process;
+			return new Server().then(function (cayley) {
+				server = cayley;
 			});
 		},
 
@@ -84,16 +46,16 @@ define(function (require) {
 				assert.isFunction(Store, 'Store is a function');
 			},
 
-			'a url must be provided': function () {
+			'a client must be provided': function () {
 				assert.throws(function () {
 					return new Store();
-				}, ReferenceError, 'A url must be provided to create a new cayley-perstore');
+				}, ReferenceError, 'A client must be provided to create a new cayley-perstore');
 			},
 
 			'returns Store instances': function () {
 				/* jshint newcap:false */
 				var store = Store({
-						url: cayleyURL
+						client: client
 					});
 
 				assert.instanceOf(store, Store, 'store is an instance of cayley-perstore');
@@ -108,7 +70,7 @@ define(function (require) {
 
 		put: {
 			'returns a promise': function () {
-				var result = store.put(value);
+				var result = store.put(value).catch(logError);
 
 				assert.isFunction(result.then, 'store.put returns a promise');
 				return result;
@@ -121,30 +83,28 @@ define(function (require) {
 
 				return store.put(value).then(function () {
 					return store.get(key);
-				})
+				}, logError)
 				.then(function (actual) {
 					assert.deepEqual(actual, value, 'store.put should insert values into the db');
 				});
 			},
 
 			'resolves to identifier of object': function () {
-				return this.skip('not implemented');
 				var value = {
 						name: 'bar'
 					};
 
 				return store.put(value).then(function (key) {
-					return Q.ninvoke(db, 'get', key)
-						.then(function (actual) {
-							assert.strictEqual(actual.id,  key, 'key should be generated when not provided');
-							assert.strictEqual(actual.name, value.name, 'store.put should resolve to the key');
-						});
-				});
+					return store.get(key)
+					.then(function (actual) {
+						assert.strictEqual(actual.id,  key, 'key should be generated when not provided');
+						assert.strictEqual(actual.name, value.name, 'store.put should resolve to the key');
+					}, logError);
+				}, logError);
 			},
 
 			options: {
 				'overwrite: false fails if value already exists for key': function () {
-					return this.skip('not implemented');
 					var options = {
 							overwrite: false
 						},
@@ -161,35 +121,42 @@ define(function (require) {
 						assert.fail('overwrite: false should not overwrite an existing value');
 					})
 					.catch(function (err) {
-						assert.fail('cayley-perstore: tried to overwrite existing object "' + value.id + '"');
-						assert.propertyVal(err, 'code', 'EXISTS');
+						assert.strictEqual(err.message, 'cayley-perstore: tried to overwrite existing object "' + value.id + '"',
+							'store should reject attempt to overwrite existing id');
 					});
 				},
 
 				'can add values in a tight loop': function () {
-					return this.skip('not implemented');
-					var keys = [],
-						numValues = 2000,
+					var store = new Store({ client: client }),
+						schema = {
+							type: 'object',
+							properties: {
+								id: { type: 'string' }
+							}
+						},
+						keys = [],
+						numValues = 200,
 						options = {
 							overwrite: false
 						};
 
+					store.setSchema(schema);
+
 					while (numValues--) {
-						keys.push(Math.random());
+						keys.push(uuid.v4());
 					}
 
 					return Q.all(keys.map(function (key) {
-							return store.put({
-								id: key
-							}, options);
-						}))
-						.then(function (actual) {
-							assert.deepEqual(actual, keys, 'parallel adds should be possible');
-						});
+						return store.put({
+							id: key
+						}, options);
+					}))
+					.then(function (actual) {
+						assert.deepEqual(actual, keys, 'parallel adds should be possible');
+					}, logError);
 				},
 
 				'id indicates key for object': function () {
-					return this.skip('not implemented');
 					var key = 'foo',
 						options = {
 							id: key
@@ -203,8 +170,8 @@ define(function (require) {
 							name: 'bar'
 						};
 
-					return store.put(value, options).then(function () {
-						return Q.ninvoke(db, 'get', key);
+					return store.put(value, options).then(function (key) {
+						return store.get(key);
 					})
 					.then(function (actual) {
 						assert.deepEqual(actual, expected, 'options.id should specify id of value');
@@ -231,21 +198,11 @@ define(function (require) {
 			},
 
 			'returns value found at the requested key': function () {
-				var store = new Store({ url: cayleyURL }),
-					schema = {
-						type: 'object',
-						properties: {
-							id: { type: 'string' },
-							name: { type: 'string' }
-						}
-					},
-					key = 'foo',
+				var key = 'foo',
 					value = {
 						id: key,
 						name: 'bar'
 					};
-
-				store.setSchema(schema);
 
 				return store.put(value)
 					.then(function (id) {
@@ -257,7 +214,6 @@ define(function (require) {
 			},
 
 			'should always return new objects': function () {
-				return this.skip('not implemented');
 				var key = 'foo',
 					value = {
 						id: key,
@@ -265,18 +221,18 @@ define(function (require) {
 					};
 
 				return store.put(value)
-					.then(function () {
-						return Q.all([
-							store.get(key),
-							store.get(key)
-						]);
-					})
-					.then(function (gets) {
-						gets.reduce(function (one, another) {
-							assert.notEqual(one, another, 'store.get should return new instances');
-							return another;
-						}, value);
-					});
+				.then(function () {
+					return Q.all([
+						store.get(key),
+						store.get(key)
+					]);
+				})
+				.then(function (gets) {
+					gets.reduce(function (one, another) {
+						assert.notEqual(one, another, 'store.get should return new instances');
+						return another;
+					}, value);
+				});
 			}
 		},
 
@@ -355,4 +311,17 @@ define(function (require) {
 			// TODO: sort(?!)
 		}
 	});
+
+	function logError(err) {
+		if (err && err.response) {
+			return Q.post(err.response.body, 'read')
+			.then(function (body) {
+				console.log(err.message);
+				console.log(String(body));
+				throw err;
+			});
+		}
+		console.log('Error:', err);
+		throw err;
+	}
 });
