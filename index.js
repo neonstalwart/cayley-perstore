@@ -48,19 +48,62 @@ Store.prototype = {
 			id = 'id' in options ? options.id :
 				'id' in object ? object.id :
 				uuid.v4(),
-			existing = options.overwrite === false ? this.get(id) : null;
+			overwrite = options.overwrite !== false;
 
-		return Q.when(existing).then(function (existing) {
-			if (existing) {
+		return Q.when(this.get(id)).then(function (existing) {
+			if (existing && !overwrite) {
 				throw new Error('cayley-perstore: tried to overwrite existing object "' + id + '"');
 			}
 
 			object.id = id;
 
-			return store.client.write(store._compiled.quads(id, object))
-			.then(function () {
-				return id;
-			});
+			var quads = store._compiled.quads(id, object),
+				diff,
+				promise;
+
+			if (existing) {
+				quads = quads.sort(sortQuads);
+				diff = store._compiled.quads(id, existing).sort(sortQuads).reduce(function (diff, existing) {
+					var hashExisting = hashQuad(existing),
+						hashNew = hashQuad(quads[0]);
+
+					// any new quads need to be added
+					while (hashNew < hashExisting) {
+						diff.add.push(quads.shift());
+						hashNew = hashQuad(quads[0]);
+					}
+
+					// any existing quads not in the new object need to be removed
+					if (hashExisting < hashNew) {
+						diff.remove.push(existing);
+					}
+					// any equal quads can be ignored
+					else {
+						quads.shift();
+					}
+
+					return diff;
+				}, {
+					add: [],
+					remove: []
+				});
+
+				if (diff.remove.length) {
+					promise = store.client.delete(diff.remove);
+				}
+
+				quads = diff.add.concat(quads);
+			}
+
+			return Q.when(promise)
+			.then(writeQuads);
+
+			function writeQuads () {
+				return store.client.write(quads)
+				.then(function () {
+					return id;
+				});
+			}
 		});
 	},
 
@@ -98,3 +141,11 @@ Store.prototype = {
 		});
 	}
 };
+
+function sortQuads (a, b) {
+	return hashQuad(a) > hashQuad(b) ? 1 : -1;
+}
+
+function hashQuad(quad) {
+	return [ quad.subject, quad.predicate, quad.object, quad.label || '' ].join('\x00');
+}

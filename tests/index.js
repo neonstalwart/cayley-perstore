@@ -107,6 +107,20 @@ define(function (require) {
 				}, logError);
 			},
 
+			'updates existing values': function () {
+				return store.put(value)
+				.then(function () {
+					value.name += 'changed';
+					return store.put(value);
+				})
+				.then(function (key) {
+					return store.get(key);
+				})
+				.then(function (result) {
+					assert.deepEqual(result, value);
+				});
+			},
+
 			options: {
 				'overwrite: false fails if value already exists for key': function () {
 					var options = {
@@ -125,8 +139,8 @@ define(function (require) {
 						assert.fail('overwrite: false should not overwrite an existing value');
 					})
 					.catch(function (err) {
-						assert.strictEqual(err.message, 'cayley-perstore: tried to overwrite existing object "' + value.id + '"',
-							'store should reject attempt to overwrite existing id');
+						assert.strictEqual(err.message, 'cayley-perstore: tried to overwrite existing object "' +
+								value.id + '"', 'store should reject attempt to overwrite existing id');
 					});
 				},
 
@@ -209,7 +223,7 @@ define(function (require) {
 					};
 
 				return store.put(value)
-					.then(function (id) {
+					.then(function () {
 						return store.get(key);
 					})
 					.then(function (actual) {
@@ -243,7 +257,7 @@ define(function (require) {
 		delete: {
 			'should remove an object from the db': function () {
 				// cayley deletes the predicates but does not delete the subjects
-				return this.skip('cayley bug: https://github.com/google/cayley/pull/158')
+				return this.skip('cayley bug: https://github.com/google/cayley/pull/158');
 				var key = 'foo',
 					value = {
 						id: key,
@@ -254,7 +268,7 @@ define(function (require) {
 				.then(function () {
 					return store.delete(key);
 				})
-				.then(function (results) {
+				.then(function () {
 					return store.get(key);
 				})
 				.then(function (obj) {

@@ -57,7 +57,7 @@ Server.prototype.kill = function () {
 		dfd.reject();
 	});
 
-	child.kill.apply(this.child, arguments);
+	child.kill.apply(child, arguments);
 
 	dfd.promise.fin(function () {
 		child.removeAllListeners();
